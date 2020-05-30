@@ -1,0 +1,15 @@
+{
+  "name": "email_campaign_warmer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "imap": "^0.8.19"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "darylaranha",
+  "license": "ISC"
+}
