@@ -1,38 +1,63 @@
-const dataHelper = require('./lib/dataHelper');
+const fs = require('fs');
+const express = require('express');
+const multer = require('multer');
+const xlsx = require('node-xlsx');
+
 const emailHelper = require('./lib/emailHelper');
 
-let app = {}
+let storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'data/')
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    }
+})  
+let upload = multer({ storage: storage });
 
-// dummy email address
-const emails = {
-    '': ''
-}
+const port = 3005;
+let app = express();
+app.set('view engine', 'ejs');
 
-app.init = function () {
+// api for
+// - marking emails read
+app.post('/email/markRead',  upload.single('file'), function(req, res) {
+    console.log('File:', req.file);
 
-    let userData = {};
-    userData['userName'] = 'daryla';
-    userData['password'] = 'admin'; 
+    if (typeof(req.file) !== 'object') {
+        console.log('No file sent');
+        return res.sendStatus(400);
+    }
 
-    // let emailData = {}
-    // for(let email in emails) {
-    //     emailData[email] = emails[email];
-    // }
-    // userData['emailData'] = emailData;
+    const emailData = xlsx.parse(`${__dirname}/data/${req.file.originalname}`);
 
-    // data.create('users', 'user_data', userData, function(status, err) {
-    //     if (!status) {
-    //         console.log('File created');
-    //     } else {
-    //         console.log(err);
-    //     }
-    // });
+    console.log(emailData);
+    // skipping first row because its header
+    header = emailData[0]['data'][0];
+    for(let i = 1; i < emailData[0]['data'].length; i++)
+    {
+        let sheet = emailData[0]['data'][i];
+        console.log(sheet);
+        emailHelper.init({
+            user: sheet[0],
+            password: sheet[1],
+            host: sheet[2],
+            port: sheet[3],
+            tls: true,
+            tlsOptions: {
+                rejectUnauthorized: false
+            },
+            keepalive: false
+        }, ['UNSEEN']);
+    }
 
-    // dataHelper.read('users', 'user_data', function(status, data) {
-    //     console.log(data);
-    // });
+    return res.sendStatus(200);
+});
 
-    emailHelper.connect();
-}
 
-app.init();
+app.get('/', function (req, res) {
+    res.render('index');
+});
+
+
+app.listen(port, () => console.log(`App listening at http://localhost:${port}`));
